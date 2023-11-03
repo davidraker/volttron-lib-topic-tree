@@ -41,8 +41,16 @@ class TopicNode(Node):
     def __init__(self, tag=None, identifier=None, expanded=True, data=None, segment_type='TOPIC_SEGMENT', topic=''):
         super(TopicNode, self).__init__(tag, identifier, expanded, data)
         self.data = data if data else {}
-        self.segment_type = segment_type
-        self.topic = topic
+        self.data['segment_type'] = segment_type
+        self.data['topic'] = topic
+
+    @property
+    def segment_type(self):
+        return self.data['segment_type']
+
+    @property
+    def topic(self):
+        return self.data['topic']
 
     def is_segment(self):
         return True if self.segment_type == 'TOPIC_SEGMENT' else False
@@ -55,13 +63,13 @@ class TopicTree(Tree):
         if topic_list:
             self._from_topic_list(topic_list, root_name)
         else:
-            self.create_node(root_name, root_name).segment_type = 'TOPIC_ROOT'
+            self.create_node(root_name, root_name).data['segment_type'] = 'TOPIC_ROOT'
 
     def _from_topic_list(self, topic_list, root_name):
         tops = [t.split('/') for t in topic_list]
         if all([top[0] == root_name for top in tops]):
             [top.pop(0) for top in tops]
-        self.create_node(root_name, root_name).segment_type = 'TOPIC_ROOT'
+        self.create_node(root_name, root_name).data['segment_type'] = 'TOPIC_ROOT'
         for top in tops:
             parent = root_name
             for segment in top:
@@ -74,7 +82,7 @@ class TopicTree(Tree):
 
     def add_node(self, node, parent=None):
         super(TopicTree, self).add_node(node, parent)
-        node.topic = node.identifier[(len(self.root) + 1):]
+        node.data['topic'] = node.identifier[(len(self.root) + 1):]
         return node
 
     # TODO: Should this actually be get_child_topics() where topics or routes are returned with wildcards?
@@ -119,7 +127,7 @@ class TopicTree(Tree):
         pruned = self.__class__(topic_list=nids, root_name=self.root, *args, **kwargs)
         for nid in [n.identifier for n in pruned.all_nodes()]:
             old = self.get_node(nid)
-            pruned.update_node(nid, data=old.data, segment_type=old.segment_type)
+            pruned.update_node(nid, data=old.data)
         return pruned
 
     def get_matches(self, topic, return_nodes=True):
@@ -148,9 +156,9 @@ class DeviceTree(TopicTree):
                                          *args, **kwargs)
         if assume_full_topics:
             for n in self.leaves():
-                n.segment_type = 'POINT'
+                n.data['segment_type'] = 'POINT'
             for n in [self.parent(l.identifier) for l in self.leaves()]:
-                n.segment_type = 'DEVICE'
+                n.data['segment_type'] = 'DEVICE'
 
     def points(self, nid=None):
         if nid is None:
@@ -185,12 +193,13 @@ class DeviceTree(TopicTree):
             # TODO: If not AsyncResponse instead of if kwargs
             dev_config = dev_config if kwargs else dev_config.get(timeout=5)
             reg_cfg_name = dev_config.pop('registry_config')[len('config://'):]
-            device_tree.update_node(d, data=dev_config, segment_type='DEVICE')
+            data = {'config': dev_config, 'segment_type': 'DEVICE'}
+            device_tree.update_node(d, data=data)
             registry_config = rpc_caller('config.store', 'manage_get', 'platform.driver',
                                          f'{reg_cfg_name}', raw=False, **kwargs)
             registry_config = registry_config if kwargs else registry_config.get(timeout=5)
             for pnt in registry_config:
                 point_name = pnt.pop('Volttron Point Name')
                 n = device_tree.create_node(point_name, f"{d}/{point_name}", parent=d, data=pnt)
-                n.segment_type = 'POINT'
+                n.data['segment_type'] = 'POINT'
         return device_tree

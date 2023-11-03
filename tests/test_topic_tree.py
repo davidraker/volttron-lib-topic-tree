@@ -52,7 +52,7 @@ def test_topic_node_init():
     assert _is_valid_uuid(n.tag)
     assert _is_valid_uuid(n.identifier)
     assert n.expanded is True
-    assert n.data is None
+    assert n.data == {'segment_type': 'TOPIC_SEGMENT', 'topic': ''}
     assert n.segment_type == 'TOPIC_SEGMENT'
     assert n.topic == ''
 
@@ -61,7 +61,7 @@ def test_topic_node_init():
     assert n.tag == 'foo'
     assert n.identifier == 'bar'
     assert n.expanded is False
-    assert n.data == {'foo': 'bar'}
+    assert n.data == {'foo': 'bar', 'segment_type': 'OTHER', 'topic': 'foo/bar'}
     assert n.segment_type == 'OTHER'
     assert n.topic == 'foo/bar'
 
@@ -190,7 +190,7 @@ def test_prune(topic_pattern, regex, exact_matches, included):
     assert all([n.identifier in included for n in pruned.all_nodes()])
     assert all([n.identifier not in excluded for n in pruned.all_nodes()])
     assert [n.segment_type == t.get_node(n.identifier) for n in pruned.all_nodes()]
-    assert [n.data == t.get_node(n.data) for n in pruned.all_nodes()]
+    assert [n.data == t.get_node(n.identifier).data for n in pruned.all_nodes()]
 
 
 def test_prune_final_segments():
@@ -207,7 +207,7 @@ def test_device_node_init():
     assert _is_valid_uuid(n.tag)
     assert _is_valid_uuid(n.identifier)
     assert n.expanded is True
-    assert n.data is None
+    assert n.data == {'segment_type': 'TOPIC_SEGMENT', 'topic': ''}
     assert n.segment_type == 'TOPIC_SEGMENT'
     assert n.topic == ''
 
@@ -216,7 +216,7 @@ def test_device_node_init():
     assert n.tag == 'foo'
     assert n.identifier == 'bar'
     assert n.expanded is False
-    assert n.data == {'foo': 'bar'}
+    assert n.data == {'foo': 'bar', 'segment_type': 'OTHER', 'topic': 'foo/bar'}
     assert n.segment_type == 'OTHER'
     assert n.topic == 'foo/bar'
 
