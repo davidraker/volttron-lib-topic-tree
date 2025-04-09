@@ -23,7 +23,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-treelib = ">=1.6.1"
+treelib = ">=1.7.0"
 volttron-core = { path = "../volttron-core", develop = true }
 
 [tool.poetry.group.dev.dependencies]
